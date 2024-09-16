@@ -26,6 +26,9 @@ bool Pizzaria::processOrders() {
 int Pizzaria::receiveOrder(vector<int> idPizzas) {
     vector <Pizza> pizzas;
     for (const auto& id : idPizzas) {
+        if (id < 0 || id >= allPizzas.size()) {
+            throw "id " + to_string(id) + " is out of range"; // исключение
+        }
         pizzas.push_back(Pizza(allPizzas[id]));
     }
     preperingOrders.emplace_back(pizzas);
@@ -42,6 +45,7 @@ vector<Pizza> Pizzaria::giveOrder(int idOrder, bool& isOrderReceived) {
             readyOrders.erase(it);
             return tmp;
         }
+        ++it;
     }
     return {};
 }

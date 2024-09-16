@@ -5,7 +5,7 @@
 #include <chrono>
 #include <mutex>
 
-mutex inputMutex;
+// мьютекс для синхронизации потоков
 mutex outputMutex;
 
 void printDescription(shared_ptr<Pizzaria> curPizziria, shared_ptr<User> curUser) {
@@ -27,8 +27,8 @@ void printDescription(shared_ptr<Pizzaria> curPizziria, shared_ptr<User> curUser
 }
 
 vector<int> splitStr(string str) {
-    std::vector<int> nums;
-    std::istringstream iss(str);
+    vector<int> nums;
+    istringstream iss(str);
     int num;
     while (iss >> num){
         nums.push_back(num);
@@ -40,16 +40,18 @@ int main() {
 
     Pizzaria pizzeria("Pizza Hut", { Pizza("Chicken", 50, 600, 5), Pizza("Peperone", 30, 500, 2), Pizza("Carbonara", 40, 550, 10) });
 
+    // умный указатель - для удобства и безопасности при нескольких потоках 
     shared_ptr<Pizzaria> curPizziria = make_shared<Pizzaria>(pizzeria);
 
     User user("John", "89005553535");
 
     shared_ptr<User> curUser = make_shared<User>(user);
 
+    // Запускаем отдельный поток, который с периодичностью в 3 секунды проверяет готовность заказов
     thread orderProcessor([curPizziria, curUser]() {
         while (true) {
             {
-                unique_lock<mutex> lock(inputMutex);
+                unique_lock<mutex> lock(outputMutex);
                 if (curPizziria->processOrders()) {
                     printDescription(curPizziria, curUser);
                 }
@@ -71,7 +73,7 @@ int main() {
         try {
             (cin >> input).get();
             if (input == 1) {
-                std::unique_lock<std::mutex> lock(inputMutex);
+                unique_lock<mutex> lock(outputMutex);
                 cout << "Enter the pizza id separated by a space:\n";
                 getline(cin, inpStr);
                 numbers = splitStr(inpStr);
@@ -82,6 +84,7 @@ int main() {
             }
         }
         catch (string errorMessage) {
+            unique_lock<mutex> lock(outputMutex);
             cout << errorMessage << '\n';
             this_thread::sleep_for(chrono::seconds(2));
         }
